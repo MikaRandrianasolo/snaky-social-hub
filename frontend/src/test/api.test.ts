@@ -1,39 +1,54 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { api } from '@/services/api';
 
+// Generate unique test emails to avoid conflicts between test runs
+const generateTestEmail = (prefix: string) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).slice(2, 8);
+  return `${prefix}${timestamp}${random}@test.com`;
+};
+
 describe('api.auth', () => {
   it('signs up a new user', async () => {
-    const user = await api.auth.signup('TestUser', 'test@test.com', 'password123');
+    const email = generateTestEmail('newuser');
+    const user = await api.auth.signup('TestUser', email, 'password123');
     expect(user.username).toBe('TestUser');
-    expect(user.email).toBe('test@test.com');
+    expect(user.email).toBe(email);
     expect(user.id).toBeDefined();
   });
 
   it('logs in with valid credentials', async () => {
-    await api.auth.signup('LoginTest', 'login@test.com', 'pass123');
+    const email = generateTestEmail('login');
+    await api.auth.signup('LoginTest', email, 'pass123');
     await api.auth.logout();
-    const user = await api.auth.login('login@test.com', 'pass123');
+    const user = await api.auth.login(email, 'pass123');
     expect(user.username).toBe('LoginTest');
   });
 
   it('rejects invalid login', async () => {
-    await expect(api.auth.login('nobody@test.com', 'wrong')).rejects.toThrow('Invalid email or password');
+    const email = generateTestEmail('nonexistent');
+    await expect(api.auth.login(email, 'wrong')).rejects.toThrow('Invalid email or password');
   });
 
   it('rejects duplicate email signup', async () => {
-    await api.auth.signup('Dup1', 'dup@test.com', 'pass');
-    await expect(api.auth.signup('Dup2', 'dup@test.com', 'pass')).rejects.toThrow('Email already exists');
+    const email = generateTestEmail('dup');
+    await api.auth.signup('Dup1', email, 'pass123');
+    await expect(api.auth.signup('Dup2', email, 'pass123')).rejects.toThrow('Email already exists');
   });
 
   it('logs out correctly', async () => {
-    await api.auth.signup('LogoutUser', 'logout@test.com', 'pass');
+    const email = generateTestEmail('logout');
+    await api.auth.signup('LogoutUser', email, 'pass123');
+    await api.auth.login(email, 'pass123');
     await api.auth.logout();
     const user = await api.auth.getCurrentUser();
     expect(user).toBeNull();
   });
 
   it('returns current user after login', async () => {
-    await api.auth.signup('CurrentUser', 'current@test.com', 'pass');
+    const email = generateTestEmail('current');
+    await api.auth.signup('CurrentUser', email, 'pass123');
+    await api.auth.login(email, 'pass123');
     const user = await api.auth.getCurrentUser();
     expect(user?.username).toBe('CurrentUser');
     await api.auth.logout();
@@ -58,7 +73,9 @@ describe('api.leaderboard', () => {
   });
 
   it('submits score when logged in', async () => {
-    await api.auth.signup('Scorer', 'scorer@test.com', 'pass');
+    const email = generateTestEmail('scorer');
+    await api.auth.signup('Scorer', email, 'pass123');
+    await api.auth.login(email, 'pass123');
     const entry = await api.leaderboard.submitScore(999, 'walls');
     expect(entry.score).toBe(999);
     expect(entry.mode).toBe('walls');
@@ -68,7 +85,7 @@ describe('api.leaderboard', () => {
 
   it('rejects score submission when not logged in', async () => {
     await api.auth.logout();
-    await expect(api.leaderboard.submitScore(100, 'walls')).rejects.toThrow('Must be logged in');
+    await expect(api.leaderboard.submitScore(100, 'walls')).rejects.toThrow('No credentials provided');
   });
 });
 
