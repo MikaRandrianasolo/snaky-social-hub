@@ -1,0 +1,487 @@
+openapi: 3.1.0
+info:
+  title: Snaky Social Hub API
+  description: Backend API for the Snaky Social Hub game platform
+  version: 1.0.0
+  contact:
+    name: Snaky Social Hub Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.snaky-social-hub.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Leaderboard
+    description: Game scores and rankings
+  - name: Live Games
+    description: Real-time active games
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Create a new user account
+      operationId: signupUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            example:
+              username: 'PixelViper'
+              email: 'user@example.com'
+              password: 'secure_password_123'
+      responses:
+        '201':
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: '550e8400-e29b-41d4-a716-446655440000'
+                username: 'PixelViper'
+                email: 'user@example.com'
+        '400':
+          description: Invalid input or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Email already exists'
+                code: 'EMAIL_DUPLICATE'
+        '409':
+          description: Conflict - Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Email already exists'
+                code: 'EMAIL_DUPLICATE'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login with email and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: 'user@example.com'
+              password: 'secure_password_123'
+      responses:
+        '200':
+          description: Successfully logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                user:
+                  id: '550e8400-e29b-41d4-a716-446655440000'
+                  username: 'PixelViper'
+                  email: 'user@example.com'
+                token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Invalid email or password'
+                code: 'INVALID_CREDENTIALS'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout current user
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: 'Logged out successfully'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: '550e8400-e29b-41d4-a716-446655440000'
+                username: 'PixelViper'
+                email: 'user@example.com'
+        '401':
+          description: Unauthorized - not logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Unauthorized'
+                code: 'NOT_AUTHENTICATED'
+
+  /leaderboard:
+    get:
+      tags:
+        - Leaderboard
+      summary: Get leaderboard entries (sorted by score descending)
+      operationId: getLeaderboard
+      parameters:
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - pass-through
+              - walls
+          description: Filter by game mode (optional)
+          example: walls
+      responses:
+        '200':
+          description: List of leaderboard entries sorted by score
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+              example:
+                - id: '1'
+                  username: 'PixelViper'
+                  score: 2450
+                  mode: 'walls'
+                  date: '2026-02-17'
+                - id: '2'
+                  username: 'NeonByte'
+                  score: 2100
+                  mode: 'walls'
+                  date: '2026-02-16'
+
+    post:
+      tags:
+        - Leaderboard
+      summary: Submit a score to the leaderboard
+      operationId: submitScore
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitScoreRequest'
+            example:
+              score: 2450
+              mode: 'walls'
+      responses:
+        '201':
+          description: Score successfully submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardEntry'
+              example:
+                id: '550e8400-e29b-41d4-a716-446655440001'
+                username: 'PixelViper'
+                score: 2450
+                mode: 'walls'
+                date: '2026-02-17'
+        '400':
+          description: Invalid score data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Invalid score value'
+                code: 'INVALID_INPUT'
+        '401':
+          description: Unauthorized - must be logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Must be logged in to submit score'
+                code: 'NOT_AUTHENTICATED'
+
+  /games:
+    get:
+      tags:
+        - Live Games
+      summary: Get all active live games
+      operationId: getLiveGames
+      responses:
+        '200':
+          description: List of currently active games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LiveGame'
+              example:
+                - id: 'live1'
+                  username: 'PixelViper'
+                  score: 340
+                  mode: 'walls'
+                  startedAt: '2026-02-17T14:30:00Z'
+                - id: 'live2'
+                  username: 'NeonByte'
+                  score: 120
+                  mode: 'pass-through'
+                  startedAt: '2026-02-17T14:45:00Z'
+
+  /games/{gameId}:
+    get:
+      tags:
+        - Live Games
+      summary: Get a specific live game by ID
+      operationId: getGameById
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the game to retrieve
+          example: 'live1'
+      responses:
+        '200':
+          description: Game details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveGame'
+              example:
+                id: 'live1'
+                username: 'PixelViper'
+                score: 340
+                mode: 'walls'
+                startedAt: '2026-02-17T14:30:00Z'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Game not found'
+                code: 'NOT_FOUND'
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        username:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Display name for the user
+        email:
+          type: string
+          format: email
+          description: User's email address
+
+    SignupRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Desired username
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          minLength: 6
+          description: User's password (minimum 6 characters)
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          description: User's password
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT authentication token for subsequent requests
+
+    LeaderboardEntry:
+      type: object
+      required:
+        - id
+        - username
+        - score
+        - mode
+        - date
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique entry identifier
+        username:
+          type: string
+          description: Player's username
+        score:
+          type: integer
+          minimum: 0
+          description: Final score achieved
+        mode:
+          type: string
+          enum:
+            - pass-through
+            - walls
+          description: Game mode used during the game
+        date:
+          type: string
+          format: date
+          description: Date the score was achieved (YYYY-MM-DD)
+
+    SubmitScoreRequest:
+      type: object
+      required:
+        - score
+        - mode
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          description: The score to submit
+        mode:
+          type: string
+          enum:
+            - pass-through
+            - walls
+          description: The game mode used
+
+    LiveGame:
+      type: object
+      required:
+        - id
+        - username
+        - score
+        - mode
+        - startedAt
+      properties:
+        id:
+          type: string
+          description: Unique game identifier
+        username:
+          type: string
+          description: Player's username
+        score:
+          type: integer
+          minimum: 0
+          description: Current score in this game
+        mode:
+          type: string
+          enum:
+            - pass-through
+            - walls
+          description: Game mode being played
+        startedAt:
+          type: string
+          format: date-time
+          description: When the game started (ISO 8601 format)
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: string
+          description: Machine-readable error code
+        details:
+          type: object
+          description: Additional error details (optional)
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+security: []
