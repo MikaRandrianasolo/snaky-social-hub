@@ -45,18 +45,41 @@ class MockDatabase:
         self._seed_data()
 
     def _seed_data(self):
-        """Seed with mock data similar to frontend tests."""
+        """Seed with comprehensive mock data for testing."""
+        # Seed test users
+        test_users = [
+            {"username": "PixelViper", "email": "pixel@example.com", "password_hash": "hashed_password_1"},
+            {"username": "NeonByte", "email": "neon@example.com", "password_hash": "hashed_password_2"},
+            {"username": "RetroGlitch", "email": "retro@example.com", "password_hash": "hashed_password_3"},
+        ]
+        
+        for user in test_users:
+            user_obj = User(str(uuid.uuid4()), user["username"], user["email"], user["password_hash"])
+            self.users[user_obj.id] = user_obj
+            self.users_by_email[user["email"]] = user_obj
+
+        # Comprehensive mock leaderboard with more entries
         mock_leaderboard = [
-            {"username": "PixelViper", "score": 2450, "mode": "walls", "date": "2026-02-17"},
-            {"username": "NeonByte", "score": 2100, "mode": "pass-through", "date": "2026-02-16"},
-            {"username": "RetroGlitch", "score": 1890, "mode": "walls", "date": "2026-02-17"},
-            {"username": "CyberSnake", "score": 1750, "mode": "pass-through", "date": "2026-02-15"},
-            {"username": "ArcadeKing", "score": 1620, "mode": "walls", "date": "2026-02-16"},
-            {"username": "GlowWorm", "score": 1500, "mode": "pass-through", "date": "2026-02-14"},
-            {"username": "BitCrusher", "score": 1380, "mode": "walls", "date": "2026-02-17"},
-            {"username": "SnakeEyes", "score": 1200, "mode": "pass-through", "date": "2026-02-13"},
-            {"username": "VoidRunner", "score": 1050, "mode": "walls", "date": "2026-02-16"},
-            {"username": "PhosphorGlow", "score": 900, "mode": "pass-through", "date": "2026-02-15"},
+            {"username": "PixelViper", "score": 8950, "mode": "walls", "date": "2026-02-19"},
+            {"username": "ShadowMaster", "score": 8420, "mode": "walls", "date": "2026-02-18"},
+            {"username": "NeonByte", "score": 7850, "mode": "pass-through", "date": "2026-02-19"},
+            {"username": "CyberSnake", "score": 7620, "mode": "walls", "date": "2026-02-19"},
+            {"username": "RetroGlitch", "score": 7340, "mode": "pass-through", "date": "2026-02-18"},
+            {"username": "ArcadeKing", "score": 6890, "mode": "walls", "date": "2026-02-17"},
+            {"username": "GlowWorm", "score": 6750, "mode": "pass-through", "date": "2026-02-19"},
+            {"username": "BitCrusher", "score": 6520, "mode": "walls", "date": "2026-02-18"},
+            {"username": "VoidRunner", "score": 6180, "mode": "pass-through", "date": "2026-02-17"},
+            {"username": "PhosphorGlow", "score": 5940, "mode": "walls", "date": "2026-02-19"},
+            {"username": "EchoKnight", "score": 5670, "mode": "pass-through", "date": "2026-02-16"},
+            {"username": "IceVenom", "score": 5420, "mode": "walls", "date": "2026-02-18"},
+            {"username": "NovaStrike", "score": 5180, "mode": "pass-through", "date": "2026-02-19"},
+            {"username": "HexEngineer", "score": 4950, "mode": "walls", "date": "2026-02-17"},
+            {"username": "FrostByte", "score": 4720, "mode": "pass-through", "date": "2026-02-18"},
+            {"username": "ThunderSnake", "score": 4580, "mode": "walls", "date": "2026-02-19"},
+            {"username": "CrimsonWave", "score": 4320, "mode": "pass-through", "date": "2026-02-16"},
+            {"username": "SilentViper", "score": 4150, "mode": "walls", "date": "2026-02-15"},
+            {"username": "LunarEcho", "score": 3920, "mode": "pass-through", "date": "2026-02-19"},
+            {"username": "InfernoPath", "score": 3750, "mode": "walls", "date": "2026-02-18"},
         ]
         
         for entry in mock_leaderboard:
@@ -69,11 +92,16 @@ class MockDatabase:
             )
             self.leaderboard.append(lb_entry)
 
-        # Mock live games
+        # More live games in progress
         mock_games = [
-            {"id": "live1", "username": "PixelViper", "score": 340, "mode": "walls", "startedAt": "2026-02-17T14:30:00Z"},
-            {"id": "live2", "username": "NeonByte", "score": 120, "mode": "pass-through", "startedAt": "2026-02-17T14:45:00Z"},
-            {"id": "live3", "username": "RetroGlitch", "score": 560, "mode": "walls", "startedAt": "2026-02-17T14:20:00Z"},
+            {"id": "game_001", "username": "PixelViper", "score": 890, "mode": "walls", "startedAt": "2026-02-19T10:15:00Z"},
+            {"id": "game_002", "username": "ShadowMaster", "score": 650, "mode": "pass-through", "startedAt": "2026-02-19T10:22:00Z"},
+            {"id": "game_003", "username": "NeonByte", "score": 1240, "mode": "walls", "startedAt": "2026-02-19T10:05:00Z"},
+            {"id": "game_004", "username": "CyberSnake", "score": 520, "mode": "pass-through", "startedAt": "2026-02-19T10:28:00Z"},
+            {"id": "game_005", "username": "RetroGlitch", "score": 780, "mode": "walls", "startedAt": "2026-02-19T10:18:00Z"},
+            {"id": "game_006", "username": "ArcadeKing", "score": 310, "mode": "pass-through", "startedAt": "2026-02-19T10:32:00Z"},
+            {"id": "game_007", "username": "GlowWorm", "score": 1050, "mode": "walls", "startedAt": "2026-02-19T10:10:00Z"},
+            {"id": "game_008", "username": "BitCrusher", "score": 420, "mode": "pass-through", "startedAt": "2026-02-19T10:25:00Z"},
         ]
         
         for game in mock_games:
