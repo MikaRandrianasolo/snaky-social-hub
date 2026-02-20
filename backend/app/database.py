@@ -46,18 +46,9 @@ class MockDatabase:
 
     def _seed_data(self):
         """Seed with comprehensive mock data for testing."""
-        # Seed test users
-        test_users = [
-            {"username": "PixelViper", "email": "pixel@example.com", "password_hash": "hashed_password_1"},
-            {"username": "NeonByte", "email": "neon@example.com", "password_hash": "hashed_password_2"},
-            {"username": "RetroGlitch", "email": "retro@example.com", "password_hash": "hashed_password_3"},
-        ]
+        # Note: Test users are NOT pre-seeded to allow testing signup/login flow
+        # Users can freely create accounts during testing
         
-        for user in test_users:
-            user_obj = User(str(uuid.uuid4()), user["username"], user["email"], user["password_hash"])
-            self.users[user_obj.id] = user_obj
-            self.users_by_email[user["email"]] = user_obj
-
         # Comprehensive mock leaderboard with more entries
         mock_leaderboard = [
             {"username": "PixelViper", "score": 8950, "mode": "walls", "date": "2026-02-19"},
