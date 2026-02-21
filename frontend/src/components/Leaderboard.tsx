@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { api, LeaderboardEntry, GameMode } from '@/services/api';
+import { useState } from 'react';
+import { GameMode } from '@/services/api';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Trophy, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -8,17 +9,8 @@ interface LeaderboardProps {
 }
 
 export function Leaderboard({ onBack }: LeaderboardProps) {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [filterMode, setFilterMode] = useState<GameMode | 'all'>('all');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    api.leaderboard
-      .getAll(filterMode === 'all' ? undefined : filterMode)
-      .then(setEntries)
-      .finally(() => setLoading(false));
-  }, [filterMode]);
+  const { entries, loading } = useLeaderboard({ mode: filterMode });
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -33,11 +25,10 @@ export function Leaderboard({ onBack }: LeaderboardProps) {
           <button
             key={m}
             onClick={() => setFilterMode(m)}
-            className={`px-3 py-1.5 rounded-md font-mono text-xs transition-all ${
-              filterMode === m
+            className={`px-3 py-1.5 rounded-md font-mono text-xs transition-all ${filterMode === m
                 ? 'bg-primary text-primary-foreground neon-glow'
                 : 'bg-muted text-muted-foreground hover:text-foreground'
-            }`}
+              }`}
           >
             {m === 'all' ? 'ALL' : m.toUpperCase()}
           </button>
@@ -58,9 +49,8 @@ export function Leaderboard({ onBack }: LeaderboardProps) {
           entries.map((entry, i) => (
             <div
               key={entry.id}
-              className={`grid grid-cols-[40px_1fr_80px_100px] gap-2 px-4 py-3 border-t border-border/50 text-sm font-mono transition-colors hover:bg-muted/30 ${
-                i < 3 ? 'text-foreground' : 'text-muted-foreground'
-              }`}
+              className={`grid grid-cols-[40px_1fr_80px_100px] gap-2 px-4 py-3 border-t border-border/50 text-sm font-mono transition-colors hover:bg-muted/30 ${i < 3 ? 'text-foreground' : 'text-muted-foreground'
+                }`}
             >
               <span className={i === 0 ? 'text-accent neon-text-accent font-bold' : i < 3 ? 'text-primary' : ''}>
                 {i + 1}

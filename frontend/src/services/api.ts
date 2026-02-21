@@ -36,26 +36,25 @@ export type GameMode = 'pass-through' | 'walls';
 // Backend configuration
 const API_BASE_URL = 'http://localhost:8000/api';
 
-// Token storage - in-memory fallback for test environments
-let authToken: string | null = null;
+// Token storage - always use localStorage as primary source
 let memoryTokenStorage: string | null = null;
 
 /**
- * Get auth token from localStorage or memory
+ * Get auth token from localStorage first, then memory fallback
  */
 function getStoredToken(): string | null {
-  if (authToken) {
-    return authToken;
-  }
-  
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
-      return localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        memoryTokenStorage = token; // Keep memory in sync
+        return token;
+      }
     } catch {
-      // localStorage not available
+      // localStorage not available, fall through to memory
     }
   }
-  
+
   return memoryTokenStorage;
 }
 
@@ -63,14 +62,14 @@ function getStoredToken(): string | null {
  * Store auth token in localStorage and memory
  */
 function storeToken(token: string): void {
-  authToken = token;
   memoryTokenStorage = token;
-  
+
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem('auth_token', token);
     } catch {
       // localStorage not available, use memory storage
+      console.warn('localStorage not available, using memory storage for token');
     }
   }
 }
@@ -79,9 +78,8 @@ function storeToken(token: string): void {
  * Clear auth token from localStorage and memory
  */
 function clearToken(): void {
-  authToken = null;
   memoryTokenStorage = null;
-  
+
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
       localStorage.removeItem('auth_token');
@@ -98,7 +96,7 @@ async function fetchWithAuth(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const token = authToken || getStoredToken();
+  const token = getStoredToken();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
