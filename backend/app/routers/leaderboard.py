@@ -5,7 +5,7 @@ Leaderboard endpoints.
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from datetime import date
 from app.models import LeaderboardEntry, SubmitScoreRequest
-from app.database import db
+from app import database
 from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/leaderboard", tags=["Leaderboard"])
@@ -20,7 +20,7 @@ async def get_leaderboard(mode: str = Query(None)):
             detail="Invalid game mode",
         )
     
-    entries = db.get_all_leaderboard_entries(mode=mode)
+    entries = database.db.get_all_leaderboard_entries(mode=mode)
     
     return [
         LeaderboardEntry(
@@ -54,7 +54,7 @@ async def submit_score(score_data: SubmitScoreRequest, current_user = Depends(ge
         )
     
     # Add to leaderboard
-    entry = db.add_leaderboard_entry(
+    entry = database.db.add_leaderboard_entry(
         username=current_user.username,
         score=score_data.score,
         mode=score_data.mode,

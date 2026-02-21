@@ -31,28 +31,12 @@ def client(test_db):
     if original_deps_db is not None:
         dependencies_module.db = test_db
     
-    # Also patch in routers
-    import app.routers.auth as auth_module
-    import app.routers.leaderboard as leaderboard_module
-    import app.routers.games as games_module
-    
-    original_auth_db = auth_module.db
-    original_leaderboard_db = leaderboard_module.db
-    original_games_db = games_module.db
-    
-    auth_module.db = test_db
-    leaderboard_module.db = test_db
-    games_module.db = test_db
-    
     yield TestClient(app)
-    
+
     # Restore original db instances
     database_module.db = original_db
     if original_deps_db is not None:
         dependencies_module.db = original_deps_db
-    auth_module.db = original_auth_db
-    leaderboard_module.db = original_leaderboard_db
-    games_module.db = original_games_db
 
 
 @pytest.fixture

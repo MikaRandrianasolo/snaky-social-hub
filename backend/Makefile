@@ -20,6 +20,9 @@ install: ## Install dependencies with uv
 dev: ## Run development server with hot reload
 	uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
+dev-persistent: ## Run development server with SQLite persistence (creates ./snaky_dev.db)
+	DATABASE_URL=sqlite:///./snaky_dev.db uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 dev-quiet: ## Run development server with minimal output
 	@uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000 2>&1 | grep -v "Uvicorn running\|Application startup complete"
 

@@ -262,6 +262,20 @@ Currently, the development setup uses:
 - `DATABASE_URL` - Optional (using in-memory mock DB by default)
 - Defaults work fine for local development
 
+### Persisting leaderboard (SQLite)
+
+By default the backend uses the in-memory mock DB so scores are lost on restart. To persist scores between restarts during development, run the backend with a SQLite file-backed database:
+
+```bash
+# from the repo root
+cd backend
+make dev-persistent
+# or explicitly:
+DATABASE_URL=sqlite:///./snaky_dev.db uv run python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+This creates `./snaky_dev.db` in the `backend` folder and will persist leaderboard entries and users.
+
 ## Production
 
 When you're ready for production:

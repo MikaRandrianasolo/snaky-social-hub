@@ -5,7 +5,7 @@ Authentication endpoints.
 from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import timedelta
 from app.models import UserCreate, UserLogin, User, AuthResponse
-from app.database import db
+from app import database
 from app.security import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_user
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 async def signup(user_data: UserCreate):
     """Create a new user account."""
     # Check if email already exists
-    if db.user_exists_by_email(user_data.email):
+    if database.db.user_exists_by_email(user_data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already exists",
@@ -25,7 +25,7 @@ async def signup(user_data: UserCreate):
     
     # Hash password and create user
     password_hash = hash_password(user_data.password)
-    user = db.create_user(user_data.username, user_data.email, password_hash)
+    user = database.db.create_user(user_data.username, user_data.email, password_hash)
     
     return User(id=user.id, username=user.username, email=user.email)
 
@@ -33,7 +33,7 @@ async def signup(user_data: UserCreate):
 @router.post("/login", response_model=AuthResponse)
 async def login(credentials: UserLogin):
     """Login with email and password."""
-    user = db.get_user_by_email(credentials.email)
+    user = database.db.get_user_by_email(credentials.email)
     
     if user is None or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
