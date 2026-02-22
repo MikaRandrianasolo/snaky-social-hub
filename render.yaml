@@ -22,7 +22,7 @@ services:
     # Auto-deploy on push
     autoDeploy: true
 
-  - type: pserver
+  - type: pgsql
     name: snaky-db
     plan: starter
     region: oregon
