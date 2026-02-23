@@ -3,10 +3,20 @@ FastAPI main application for Snaky Social Hub.
 Run with: uvicorn main:app --reload
 """
 
+import sys
+import logging
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, leaderboard, games
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Snaky Social Hub API",
@@ -16,6 +26,11 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+
+# Log app startup
+@app.on_event("startup")
+async def startup_event():
+    logger.info("🐍 Snaky Social Hub API is starting up...")
 
 # Add CORS middleware
 app.add_middleware(
