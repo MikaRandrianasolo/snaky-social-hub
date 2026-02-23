@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: ./
-    plan: starter
+    plan: free
     region: oregon
     
     # Environment variables
@@ -13,6 +13,8 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: PORT
+        value: 8000
 
     # Health check endpoint
     healthCheckPath: /docs

@@ -48,38 +48,19 @@ COPY --from=frontend-builder /frontend/dist ./frontend/dist
 # Copy nginx configuration
 COPY frontend/nginx.conf /etc/nginx/nginx.conf
 
-# Create log directories for supervisor
-RUN mkdir -p /var/log/supervisor
+# Create log directories
+RUN mkdir -p /var/log/supervisor /var/run/nginx
 
-# Copy supervisor configuration
-RUN mkdir -p /etc/supervisor/conf.d
-COPY <<EOF /etc/supervisor/conf.d/supervisord.conf
-[supervisord]
-nodaemon=true
-logfile=/var/log/supervisor/supervisord.log
-
-[program:backend]
-command=uv run uvicorn main:app --host 127.0.0.1 --port 8000
-directory=/app
-autostart=true
-autorestart=true
-stdout_logfile=/var/log/supervisor/backend.log
-stderr_logfile=/var/log/supervisor/backend_err.log
-
-[program:nginx]
-command=/usr/sbin/nginx -g "daemon off;"
-autostart=true
-autorestart=true
-stdout_logfile=/var/log/supervisor/nginx.log
-stderr_logfile=/var/log/supervisor/nginx_err.log
-EOF
+# Set up environment variables
+ENV PORT=8000
+ENV HOST=0.0.0.0
 
 # Expose the main port
-EXPOSE 80
+EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/docs || exit 1
+# Health check - check backend directly
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/docs || exit 1
 
-# Start supervisor which manages both backend and nginx
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Start the FastAPI app directly (Railway will handle process management)
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
