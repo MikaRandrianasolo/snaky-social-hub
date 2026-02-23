@@ -393,6 +393,11 @@ class SQLDatabase:
 # Global database instance: prefer SQL if DATABASE_URL provided
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL:
-    db = SQLDatabase(DATABASE_URL)
+    try:
+        db = SQLDatabase(DATABASE_URL)
+    except Exception as e:
+        print(f"Warning: Could not connect to SQL database: {e}")
+        print("Falling back to MockDatabase")
+        db = MockDatabase()
 else:
     db = MockDatabase()

@@ -11,13 +11,11 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: PORT
-        value: 8000
+      # DATABASE_URL is optional - app works with mock database if not set
+      # To add PostgreSQL: create a service and set DATABASE_URL here
 
     # Health check endpoint
-    healthCheckPath: /docs
+    healthCheckPath: /health
 
     # Auto-deploy on push
     autoDeploy: true
