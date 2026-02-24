@@ -12,9 +12,9 @@ from app.dependencies import get_current_user
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 
-@router.post("/signup", response_model=User, status_code=201)
+@router.post("/signup", response_model=AuthResponse, status_code=201)
 async def signup(user_data: UserCreate):
-    """Create a new user account."""
+    """Create a new user account and return auth token."""
     # Check if email already exists
     if database.db.user_exists_by_email(user_data.email):
         raise HTTPException(
@@ -27,7 +27,13 @@ async def signup(user_data: UserCreate):
     password_hash = hash_password(user_data.password)
     user = database.db.create_user(user_data.username, user_data.email, password_hash)
     
-    return User(id=user.id, username=user.username, email=user.email)
+    # Create JWT token and return user + token (same as login)
+    token = create_access_token(data={"sub": user.id})
+    
+    return AuthResponse(
+        user=User(id=user.id, username=user.username, email=user.email),
+        token=token
+    )
 
 
 @router.post("/login", response_model=AuthResponse)

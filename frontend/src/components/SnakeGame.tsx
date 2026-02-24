@@ -27,8 +27,17 @@ export function SnakeGame({ onBack }: SnakeGameProps) {
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Failed to submit score';
           console.error('Score submission failed:', message);
-          alert(`Failed to save score: ${message}`);
+          // More helpful error messages
+          if (message.includes('No credentials') || message.includes('401')) {
+            alert('You must be logged in to save your score. Please log in and try again.');
+          } else if (message.includes('Invalid')) {
+            alert(`Invalid score data: ${message}`);
+          } else {
+            alert(`Failed to save score: ${message}`);
+          }
         }
+      } else {
+        console.log('User not logged in, score not submitted');
       }
     },
   });

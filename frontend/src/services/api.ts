@@ -176,7 +176,10 @@ export const api = {
         throw new Error(errorMessage);
       }
 
-      return response.json();
+      const data: AuthResponse = await response.json();
+      // Store token for future requests (user is now authenticated)
+      storeToken(data.token);
+      return data.user;
     },
 
     /**
