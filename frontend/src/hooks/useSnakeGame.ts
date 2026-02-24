@@ -82,6 +82,15 @@ export function useSnakeGame({ mode, autoPlay = false, onGameOver }: UseSnakeGam
     if (autoPlay) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If the user is focusing an input, textarea, select, or a contentEditable element,
+      // do not intercept keys so typing in forms (login/signup) works as expected.
+      const active = document.activeElement as HTMLElement | null;
+      if (active) {
+        const tag = active.tagName?.toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+          return;
+        }
+      }
       const keyMap: Record<string, Direction> = {
         ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT',
         w: 'UP', s: 'DOWN', a: 'LEFT', d: 'RIGHT',

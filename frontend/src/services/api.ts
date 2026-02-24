@@ -34,7 +34,10 @@ export interface LiveGame {
 export type GameMode = 'pass-through' | 'walls';
 
 // Backend configuration
-const API_BASE_URL = 'http://localhost:8000/api';
+// Use a relative API path so the frontend talks to the same origin in production.
+// During local development you can set `VITE_API_BASE_URL` in your environment.
+const API_BASE_URL = (typeof window !== 'undefined' && (window as any).__API_BASE_URL) ||
+  (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
 
 // Token storage - always use localStorage as primary source
 let memoryTokenStorage: string | null = null;
