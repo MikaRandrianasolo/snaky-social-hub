@@ -39,49 +39,58 @@ export type GameMode = 'pass-through' | 'walls';
 const API_BASE_URL = (typeof window !== 'undefined' && (window as any).__API_BASE_URL) ||
   (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
 
-// Token storage - always use localStorage as primary source
-let memoryTokenStorage: string | null = null;
+// Token storage - single source of truth
+let currentToken: string | null = null;
 
 /**
- * Get auth token from localStorage first, then memory fallback
+ * Get current auth token
  */
 function getStoredToken(): string | null {
+  // Check memory first (fastest)
+  if (currentToken) {
+    return currentToken;
+  }
+  
+  // Fall back to localStorage
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        memoryTokenStorage = token; // Keep memory in sync
+        currentToken = token; // Sync to memory
+        console.log('[Auth] Token restored from localStorage');
         return token;
       }
-    } catch {
-      // localStorage not available, fall through to memory
+    } catch (err) {
+      console.warn('[Auth] localStorage access failed:', err);
     }
   }
 
-  return memoryTokenStorage;
+  return null;
 }
 
 /**
- * Store auth token in localStorage and memory
+ * Store auth token in memory and localStorage
  */
 function storeToken(token: string): void {
-  memoryTokenStorage = token;
+  currentToken = token;
+  console.log('[Auth] Token stored in memory');
 
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
       localStorage.setItem('auth_token', token);
-    } catch {
-      // localStorage not available, use memory storage
-      console.warn('localStorage not available, using memory storage for token');
+      console.log('[Auth] Token stored in localStorage');
+    } catch (err) {
+      console.warn('[Auth] Failed to store token in localStorage:', err);
     }
   }
 }
 
 /**
- * Clear auth token from localStorage and memory
+ * Clear auth token from memory and localStorage
  */
 function clearToken(): void {
-  memoryTokenStorage = null;
+  currentToken = null;
+  console.log('[Auth] Token cleared');
 
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
@@ -100,6 +109,7 @@ async function fetchWithAuth(
   options: RequestInit = {}
 ): Promise<Response> {
   const token = getStoredToken();
+  console.log(`[API] fetchWithAuth ${endpoint} - token present: ${!!token}`);
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -108,6 +118,9 @@ async function fetchWithAuth(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log('[API] Authorization header set');
+  } else {
+    console.warn('[API] No token available for authenticated request');
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -117,7 +130,11 @@ async function fetchWithAuth(
 
   // Handle 401 Unauthorized by clearing token
   if (response.status === 401) {
+    console.warn('[Auth] 401 Unauthorized - clearing token');
     clearToken();
+  }
+
+  return response;
   }
 
   return response;
@@ -149,6 +166,7 @@ export const api = {
      * POST /api/auth/signup
      */
     async signup(username: string, email: string, password: string): Promise<User> {
+      console.log('[Auth] Starting signup:', { username, email });
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -173,13 +191,27 @@ export const api = {
         } catch {
           // Could not parse error response, use generic message
         }
+        console.error('[Auth] Signup error:', errorMessage);
         throw new Error(errorMessage);
       }
 
-      const data: AuthResponse = await response.json();
-      // Store token for future requests (user is now authenticated)
-      storeToken(data.token);
-      return data.user;
+      try {
+        const data: AuthResponse = await response.json();
+        console.log('[Auth] Signup response received:', { hasToken: !!data.token, hasUser: !!data.user });
+        
+        if (!data.token) {
+          console.error('[Auth] Signup response missing token:', data);
+          throw new Error('No authentication token received from signup');
+        }
+        
+        // Store token for future requests (user is now authenticated)
+        storeToken(data.token);
+        console.log('[Auth] Signup successful, token stored');
+        return data.user;
+      } catch (err) {
+        console.error('[Auth] Failed to parse signup response:', err);
+        throw new Error('Invalid signup response from server');
+      }
     },
 
     /**
@@ -188,6 +220,7 @@ export const api = {
      * Returns {user, token}
      */
     async login(email: string, password: string): Promise<User> {
+      console.log('[Auth] Starting login:', { email });
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,12 +247,15 @@ export const api = {
             errorMessage = 'Invalid email or password';
           }
         }
+        console.error('[Auth] Login error:', errorMessage);
         throw new Error(errorMessage);
       }
 
       const data: AuthResponse = await response.json();
+      console.log('[Auth] Login response received, storing token');
       // Store token for future requests
       storeToken(data.token);
+      console.log('[Auth] Login successful');
       return data.user;
     },
 
@@ -242,22 +278,27 @@ export const api = {
      */
     async getCurrentUser(): Promise<User | null> {
       try {
-        const token = authToken || getStoredToken();
+        const token = getStoredToken();
         if (!token) {
+          console.log('[Auth] No token available, user not authenticated');
           return null;
         }
 
+        console.log('[Auth] Fetching current user with token');
         const response = await fetchWithAuth('/auth/me');
         if (!response.ok) {
+          console.warn(`[Auth] Get user failed: ${response.status}`);
           if (response.status === 401) {
             clearToken();
           }
           return null;
         }
 
-        return response.json();
-      } catch {
-        // Silently return null if not authenticated
+        const user = await response.json();
+        console.log('[Auth] Current user retrieved:', user.username);
+        return user;
+      } catch (err) {
+        console.error('[Auth] Error getting current user:', err);
         return null;
       }
     },
@@ -291,6 +332,10 @@ export const api = {
      * Requires authentication
      */
     async submitScore(score: number, mode: GameMode): Promise<LeaderboardEntry> {
+      console.log('[Score] Submitting score:', { score, mode });
+      const token = getStoredToken();
+      console.log('[Score] Token present:', !!token);
+      
       const response = await fetchWithAuth('/leaderboard', {
         method: 'POST',
         body: JSON.stringify({ score, mode }),
@@ -313,13 +358,20 @@ export const api = {
         } catch {
           // Could not parse error response
           if (response.status === 401) {
-            errorMessage = 'Must be logged in to submit score';
+            errorMessage = 'Authentication required - please log in first';
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid score or mode';
+          } else {
+            errorMessage = `Server error: ${response.status}`;
           }
         }
+        console.error('[Score] Submission failed:', { status: response.status, message: errorMessage });
         throw new Error(errorMessage);
       }
 
-      return response.json();
+      const entry = await response.json();
+      console.log('[Score] Score submitted successfully:', { id: entry.id, score: entry.score });
+      return entry;
     },
   },
 
