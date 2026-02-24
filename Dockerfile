@@ -34,8 +34,10 @@ ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 # Health check - use the health endpoint with longer startup period
-HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=5 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Use PORT env var (set by platform like Railway) with fallback to 8000
+ENV PORT=8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+    CMD sh -c "curl -f http://localhost:${PORT:-8000}/health || exit 1"
 
-# Print startup message and start the FastAPI app
-CMD sh -c 'echo "Starting Snaky Social Hub API..." && uv run uvicorn main:app --host 0.0.0.0 --port 8000'
+# Print startup message and start the FastAPI app using platform PORT
+CMD ["sh", "-c", "echo Starting Snaky Social Hub API on port ${PORT:-8000}... && uv run uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
