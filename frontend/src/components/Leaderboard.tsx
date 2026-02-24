@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { GameMode } from '@/services/api';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { Trophy, ArrowLeft } from 'lucide-react';
+import { Trophy, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface LeaderboardProps {
@@ -10,13 +10,33 @@ interface LeaderboardProps {
 
 export function Leaderboard({ onBack }: LeaderboardProps) {
   const [filterMode, setFilterMode] = useState<GameMode | 'all'>('all');
-  const { entries, loading } = useLeaderboard({ mode: filterMode });
+  const { entries, loading, refetch } = useLeaderboard({ mode: filterMode });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="w-full max-w-lg mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Trophy className="w-6 h-6 text-accent" />
-        <h2 className="font-pixel text-lg text-foreground neon-text">LEADERBOARD</h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Trophy className="w-6 h-6 text-accent" />
+          <h2 className="font-pixel text-lg text-foreground neon-text">LEADERBOARD</h2>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="p-2 rounded-md hover:bg-muted disabled:opacity-50 transition-all"
+          title="Refresh leaderboard"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {/* Filter */}

@@ -3,10 +3,9 @@ import { api, LeaderboardEntry, GameMode } from '@/services/api';
 
 interface UseLeaderboardOptions {
     mode?: GameMode | 'all';
-    refetchInterval?: number;
 }
 
-export function useLeaderboard({ mode = 'all', refetchInterval = 5000 }: UseLeaderboardOptions = {}) {
+export function useLeaderboard({ mode = 'all' }: UseLeaderboardOptions = {}) {
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -29,12 +28,7 @@ export function useLeaderboard({ mode = 'all', refetchInterval = 5000 }: UseLead
 
     useEffect(() => {
         fetchLeaderboard();
-
-        // Set up auto-refresh interval
-        const interval = setInterval(fetchLeaderboard, refetchInterval);
-
-        return () => clearInterval(interval);
-    }, [mode, refetchInterval]);
+    }, [mode]);
 
     return {
         entries,

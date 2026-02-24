@@ -23,7 +23,12 @@ export function SnakeGame({ onBack }: SnakeGameProps) {
       if (user) {
         try {
           await api.leaderboard.submitScore(score, mode);
-        } catch { /* ignore */ }
+          console.log(`✓ Score ${score} submitted for ${mode} mode`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Failed to submit score';
+          console.error('Score submission failed:', message);
+          alert(`Failed to save score: ${message}`);
+        }
       }
     },
   });
