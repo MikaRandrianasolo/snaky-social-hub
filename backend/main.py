@@ -49,10 +49,24 @@ app.include_router(leaderboard.router)
 app.include_router(games.router)
 
 # Serve frontend static files (SPA) from the built `frontend/dist` directory
-# Mount after API routers so `/api/*` and `/docs` continue to work
-frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
-if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+# Use the container working directory to locate the built frontend: /app/frontend/dist
+frontend_dist = Path.cwd() / "frontend" / "dist"
+index_file = frontend_dist / "index.html"
+if frontend_dist.exists() and index_file.exists():
+    # Serve static files (assets) and allow SPA fallback via a wildcard route below
+    app.mount("/static", StaticFiles(directory=str(frontend_dist)), name="static")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_index():
+        return FileResponse(str(index_file))
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        # If the requested file exists in the dist folder, serve it; otherwise return index.html
+        candidate = frontend_dist / full_path
+        if candidate.exists() and candidate.is_file():
+            return FileResponse(str(candidate))
+        return FileResponse(str(index_file))
 else:
     logger.warning(f"Frontend build not found at {frontend_dist}; root will show API docs")
 
