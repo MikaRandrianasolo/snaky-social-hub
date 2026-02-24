@@ -1,4 +1,18 @@
 # Lightweight backend-only Docker image for Railway
+# Build stage for frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+# Copy frontend package files
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies and build
+RUN npm ci --legacy-peer-deps
+COPY frontend/ .
+RUN npm run build
+
+# Final stage - Backend only
 FROM python:3.12-slim
 
 # Install minimal system dependencies
@@ -18,12 +32,19 @@ COPY backend/uv.lock* ./
 COPY backend/app ./app
 COPY backend/main.py ./
 COPY backend/README.md ./
+COPY backend/start.sh ./start.sh
 
 # Install Python dependencies using uv
 RUN uv sync
 
+# Copy built frontend assets from builder
+COPY --from=frontend-builder /frontend/dist ./frontend/dist
+
 # Create log directories
 RUN mkdir -p /var/log/app
+
+# Ensure start script is executable
+RUN chmod +x /app/start.sh || true
 
 # Set up environment variables
 ENV PORT=8000
@@ -39,5 +60,5 @@ ENV PORT=8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
     CMD sh -c "curl -f http://localhost:${PORT:-8000}/health || exit 1"
 
-# Print startup message and start the FastAPI app using platform PORT
-CMD ["sh", "-c", "echo Starting Snaky Social Hub API on port ${PORT:-8000}... && uv run uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Start using start script (prints info) which uses PORT/HOST
+CMD ["sh", "-c", "./start.sh"]
