@@ -36,8 +36,13 @@ export type GameMode = 'pass-through' | 'walls';
 // Backend configuration
 // Use a relative API path so the frontend talks to the same origin in production.
 // During local development you can set `VITE_API_BASE_URL` in your environment.
-const API_BASE_URL = (typeof window !== 'undefined' && (window as any).__API_BASE_URL) ||
-  (import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/api';
+// In Node (tests) we need an absolute URL for fetch, so fall back accordingly.
+const API_BASE_URL =
+  (typeof window !== 'undefined' && (window as any).__API_BASE_URL) ||
+  (import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
+  (typeof process !== 'undefined' && process.env.API_BASE_URL) ||
+  // default to localhost for tests or development servers
+  'http://localhost:8000/api';
 
 // Token storage - single source of truth
 let currentToken: string | null = null;
@@ -50,7 +55,7 @@ function getStoredToken(): string | null {
   if (currentToken) {
     return currentToken;
   }
-  
+
   // Fall back to localStorage
   if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
     try {
@@ -135,9 +140,6 @@ async function fetchWithAuth(
   }
 
   return response;
-  }
-
-  return response;
 }
 
 /**
@@ -198,12 +200,12 @@ export const api = {
       try {
         const data: AuthResponse = await response.json();
         console.log('[Auth] Signup response received:', { hasToken: !!data.token, hasUser: !!data.user });
-        
+
         if (!data.token) {
           console.error('[Auth] Signup response missing token:', data);
           throw new Error('No authentication token received from signup');
         }
-        
+
         // Store token for future requests (user is now authenticated)
         storeToken(data.token);
         console.log('[Auth] Signup successful, token stored');
@@ -335,7 +337,7 @@ export const api = {
       console.log('[Score] Submitting score:', { score, mode });
       const token = getStoredToken();
       console.log('[Score] Token present:', !!token);
-      
+
       const response = await fetchWithAuth('/leaderboard', {
         method: 'POST',
         body: JSON.stringify({ score, mode }),

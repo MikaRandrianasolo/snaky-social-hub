@@ -21,9 +21,10 @@ class TestAuthIntegration:
         )
         assert signup_response.status_code == 201
         user_data = signup_response.json()
-        assert user_data["username"] == "newuser"
-        assert user_data["email"] == "newuser@example.com"
-        user_id = user_data["id"]
+        # AuthResponse with nested user
+        assert user_data["user"]["username"] == "newuser"
+        assert user_data["user"]["email"] == "newuser@example.com"
+        user_id = user_data["user"]["id"]
 
         # Login with same credentials
         login_response = client.post(
@@ -204,7 +205,7 @@ class TestAuthIntegration:
             }
         )
         assert response.status_code == 201
-        user_id = response.json()["id"]
+        user_id = response.json()["user"]["id"]
 
         # Verify user exists in database
         user = test_db.get_user_by_id(user_id)

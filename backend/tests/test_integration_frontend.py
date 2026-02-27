@@ -14,8 +14,9 @@ def test_signup_login_submit_and_leaderboard_workflow(client):
     })
     assert signup_resp.status_code == 201
     data = signup_resp.json()
-    assert data["username"] == "testplayer"
-    assert data["email"] == "testplayer@example.com"
+    # AuthResponse shape
+    assert data["user"]["username"] == "testplayer"
+    assert data["user"]["email"] == "testplayer@example.com"
 
     # Login
     login_resp = client.post("/api/auth/login", json={

@@ -20,9 +20,10 @@ class TestSignup:
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["username"] == "newuser"
-        assert data["email"] == "newuser@example.com"
-        assert "id" in data
+        # backend now returns AuthResponse with user/token
+        assert data["user"]["username"] == "newuser"
+        assert data["user"]["email"] == "newuser@example.com"
+        assert "id" in data["user"]
 
     def test_signup_duplicate_email(self, client, test_user):
         """Test that duplicate emails are rejected."""
@@ -209,7 +210,7 @@ class TestAuthFlow:
             }
         )
         assert signup_response.status_code == 201
-        user_id = signup_response.json()["id"]
+        user_id = signup_response.json()["user"]["id"]
         
         # Login
         login_response = client.post(
