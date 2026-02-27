@@ -94,9 +94,18 @@ jobs:
           node-version: '20'
       - name: Install Railway CLI
         run: npm install -g @railway/cli
+      - name: Authenticate Railway CLI
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # login using token so subsequent commands work in CI
+          railway login --ci --apiKey "$RAILWAY_TOKEN"
+          railway whoami || true
       - name: Deploy to Railway using CLI
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          set -x
           # optionally specify project/env via env vars if needed
           railway up --yes
+          echo "deployment exit code: $?"
