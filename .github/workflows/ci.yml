@@ -88,10 +88,15 @@ jobs:
     if: github.ref == 'refs/heads/main' && success()
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy using Railway Action
-        uses: railwayapp/railway-action@v1
+      - name: Set up Node.js (for Railway CLI)
+        uses: actions/setup-node@v3
         with:
-          railwayToken: ${{ secrets.RAILWAY_TOKEN }}
-          # optional: specify project or environment if not autodetected
-          # projectId: ${{ secrets.RAILWAY_PROJECT_ID }}
-          # environmentId: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
+          node-version: '20'
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      - name: Deploy to Railway using CLI
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          # optionally specify project/env via env vars if needed
+          railway up --yes
